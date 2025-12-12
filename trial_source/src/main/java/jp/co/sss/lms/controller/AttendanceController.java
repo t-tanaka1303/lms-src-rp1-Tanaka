@@ -1,6 +1,9 @@
 package jp.co.sss.lms.controller;
 
 import java.text.ParseException;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,6 +48,12 @@ public class AttendanceController {
 		// 勤怠一覧の取得
 		List<AttendanceManagementDto> attendanceManagementDtoList = studentAttendanceService
 				.getAttendanceManagement(loginUserDto.getCourseId(), loginUserDto.getLmsUserId());
+		
+		// ★No.25: 過去日の未入力チェック（GET のみ）
+		if (hasPastUninput(attendanceManagementDtoList)) {
+			model.addAttribute("warning", "過去日の勤怠に未入力があります。");
+		}
+		
 		model.addAttribute("attendanceManagementDtoList", attendanceManagementDtoList);
 
 		return "attendance/detail";
@@ -70,6 +79,9 @@ public class AttendanceController {
 		// 一覧の再取得
 		List<AttendanceManagementDto> attendanceManagementDtoList = studentAttendanceService
 				.getAttendanceManagement(loginUserDto.getCourseId(), loginUserDto.getLmsUserId());
+		
+		// ★No.25: POST では警告チェックしない
+		
 		model.addAttribute("attendanceManagementDtoList", attendanceManagementDtoList);
 
 		return "attendance/detail";
@@ -95,6 +107,9 @@ public class AttendanceController {
 		// 一覧の再取得
 		List<AttendanceManagementDto> attendanceManagementDtoList = studentAttendanceService
 				.getAttendanceManagement(loginUserDto.getCourseId(), loginUserDto.getLmsUserId());
+		
+		// ★No.25: POST では警告チェックしない
+		
 		model.addAttribute("attendanceManagementDtoList", attendanceManagementDtoList);
 
 		return "attendance/detail";
@@ -139,9 +154,76 @@ public class AttendanceController {
 		// 一覧の再取得
 		List<AttendanceManagementDto> attendanceManagementDtoList = studentAttendanceService
 				.getAttendanceManagement(loginUserDto.getCourseId(), loginUserDto.getLmsUserId());
+		
+		// ★No.25: POST では警告チェックしない
+		
 		model.addAttribute("attendanceManagementDtoList", attendanceManagementDtoList);
 
 		return "attendance/detail";
+	}
+
+	// ========== ★No.25: 追加メソッド ==========
+	
+	/**
+	 * No.25: 過去日の未入力チェック
+	 * 
+	 * @param list 勤怠管理リスト
+	 * @return 過去日に未入力があればtrue
+	 */
+	private boolean hasPastUninput(List<AttendanceManagementDto> list) {
+
+		LocalDate today = LocalDate.now();
+		LocalTime now = LocalTime.now();
+		LocalTime endLimit = LocalTime.of(18, 0); // 退勤を判定する基準時刻
+
+		for (AttendanceManagementDto dto : list) {
+
+			// Date → LocalDate に変換
+			LocalDate date = dto.getTrainingDate().toInstant()
+					.atZone(ZoneId.systemDefault())
+					.toLocalDate();
+
+			String start = dto.getTrainingStartTime();
+			String end   = dto.getTrainingEndTime();
+
+			// ------------------------
+			// ✔ 今日より過去の日付
+			// ------------------------
+			if (date.isBefore(today)) {
+				if (isEmpty(start) || isEmpty(end)) {
+					return true;
+				}
+				continue;
+			}
+
+			// ------------------------
+			// ✔ 今日（isToday = true のレコードのみ）
+			// ------------------------
+			if (Boolean.TRUE.equals(dto.getIsToday())) {
+
+				// 出勤が未入力なら警告
+				if (isEmpty(start)) {
+					return true;
+				}
+
+				// 退勤が未入力の場合（終業時刻を過ぎていたら警告）
+				if (now.isAfter(endLimit) && isEmpty(end)) {
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * 文字列が空かどうかチェック
+	 * 
+	 * @param str チェック対象文字列
+	 * @return 空の場合true
+	 */
+	private boolean isEmpty(String str) {
+		return str == null || str.trim().isEmpty();
 	}
 
 }

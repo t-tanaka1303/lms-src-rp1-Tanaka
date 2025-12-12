@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" 
+<html xmlns:th="http://www.thymeleaf.org"
 	th:replace="~{/common/layout :: layout(~{::title},~{::body/content()})}">
 <head>
 <meta charset="UTF-8">
@@ -16,6 +16,17 @@
 			<span>[[${message}]]</span>
 		</div>
 	</th:block>
+
+	<!-- No.25: 警告メッセージ（過去日未入力） ここから -->
+	<th:block th:if="${not #strings.isEmpty(warning)}" id="warning">
+		<div class="alert alert-warning alert-dismissible fade in" role="alert">
+			<button type="button" class="close" data-dismiss="alert" aria-label="Close">
+				<span aria-hidden="true">×</span>
+			</button>
+			<span>[[${warning}]]</span>
+		</div>
+	</th:block>
+	<!-- sNo.25: 警告メッセージ ここまで -->
 
 	<h2>勤怠管理</h2>
 
