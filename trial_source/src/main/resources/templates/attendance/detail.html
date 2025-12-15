@@ -4,6 +4,9 @@
 <head>
 <meta charset="UTF-8">
 <title>勤怠情報変更｜LMS</title>
+<link th:href="@{/css/bootstrap.min.css}" rel="stylesheet">
+<script th:src="@{/js/jquery.min.js}"></script>
+<script th:src="@{/js/bootstrap.min.js}"></script>
 </head>
 <body>
 
@@ -17,16 +20,15 @@
 		</div>
 	</th:block>
 
-	<!-- No.25: 警告メッセージ（過去日未入力） ここから -->
-	<th:block th:if="${not #strings.isEmpty(warning)}" id="warning">
+	<!-- No.25: 警告メッセージ（過去日未入力） -->
+	<th:block th:if="${warning}" id="warning">
 		<div class="alert alert-warning alert-dismissible fade in" role="alert">
 			<button type="button" class="close" data-dismiss="alert" aria-label="Close">
 				<span aria-hidden="true">×</span>
 			</button>
-			<span>[[${warning}]]</span>
+			<span>過去日の勤怠に未入力があります。</span>
 		</div>
 	</th:block>
-	<!-- sNo.25: 警告メッセージ ここまで -->
 
 	<h2>勤怠管理</h2>
 
@@ -84,13 +86,38 @@
 		</div>
 	</div>
 
+	<!-- ★No.25: 過去日未入力ダイアログ表示 -->
 	<script type="text/javascript" th:inline="javascript">
 		$(function() {
+			// 現在時刻表示
 			$("#now").text('現在の時刻は　' + getClock() + '　です。');
 			setInterval(function() {
 				$("#now").text('現在の時刻は　' + getClock() + '　です。');
 			}, 1000);
+
+			// 過去日未入力チェック
+			var hasWarning = /*[[${warning}]]*/ false;
+			if(hasWarning) {
+				var modalHtml = 
+				'<div class="modal fade" id="pastUninputModal" tabindex="-1" role="dialog" aria-labelledby="modalLabel">' +
+					'<div class="modal-dialog" role="document">' +
+						'<div class="modal-content">' +
+							'<div class="modal-header">' +
+								'<h4 class="modal-title" id="modalLabel">過去日の勤怠未入力確認</h4>' +
+							'</div>' +
+							'<div class="modal-body">過去日の勤怠に未入力があります。確認してください。</div>' +
+							'<div class="modal-footer">' +
+								'<button type="button" class="btn btn-primary" data-dismiss="modal">OK</button>' +
+							'</div>' +
+						'</div>' +
+					'</div>' +
+				'</div>';
+
+				$('body').append(modalHtml);
+				$('#pastUninputModal').modal('show');
+			}
 		});
+
 		function getClock() {
 			const today =  new Date();
 			const hours = ('0' + today.getHours()).slice(-2);

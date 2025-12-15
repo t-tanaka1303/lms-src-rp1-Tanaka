@@ -1,6 +1,7 @@
 package jp.co.sss.lms.controller;
 
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneId;
@@ -21,209 +22,186 @@ import jp.co.sss.lms.util.Constants;
 
 /**
  * 勤怠管理コントローラ
- * 
- * @author 東京ITスクール
  */
 @Controller
 @RequestMapping("/attendance")
 public class AttendanceController {
 
-	@Autowired
-	private StudentAttendanceService studentAttendanceService;
-	@Autowired
-	private LoginUserDto loginUserDto;
+    @Autowired
+    private StudentAttendanceService studentAttendanceService;
+    @Autowired
+    private LoginUserDto loginUserDto;
 
-	/**
-	 * 勤怠管理画面 初期表示
-	 * 
-	 * @param lmsUserId
-	 * @param courseId
-	 * @param model
-	 * @return 勤怠管理画面
-	 * @throws ParseException
-	 */
-	@RequestMapping(path = "/detail", method = RequestMethod.GET)
-	public String index(Model model) {
+    /**
+     * 勤怠管理画面 初期表示
+     */
+    @RequestMapping(path = "/detail", method = RequestMethod.GET)
+    public String index(Model model) {
 
-		// 勤怠一覧の取得
-		List<AttendanceManagementDto> attendanceManagementDtoList = studentAttendanceService
-				.getAttendanceManagement(loginUserDto.getCourseId(), loginUserDto.getLmsUserId());
-		
-		// ★No.25: 過去日の未入力チェック（GET のみ）
-		if (hasPastUninput(attendanceManagementDtoList)) {
-			model.addAttribute("warning", "過去日の勤怠に未入力があります。");
-		}
-		
-		model.addAttribute("attendanceManagementDtoList", attendanceManagementDtoList);
+        List<AttendanceManagementDto> attendanceManagementDtoList =
+                studentAttendanceService.getAttendanceManagement(
+                        loginUserDto.getCourseId(),
+                        loginUserDto.getLmsUserId());
 
-		return "attendance/detail";
-	}
+        if (hasPastUninput(attendanceManagementDtoList)) {
+            model.addAttribute("warning", true);
+        }
 
-	/**
-	 * 勤怠管理画面 『出勤』ボタン押下
-	 * 
-	 * @param model
-	 * @return 勤怠管理画面
-	 */
-	@RequestMapping(path = "/detail", params = "punchIn", method = RequestMethod.POST)
-	public String punchIn(Model model) {
+        model.addAttribute("attendanceManagementDtoList", attendanceManagementDtoList);
+        return "attendance/detail";
+    }
 
-		// 更新前のチェック
-		String error = studentAttendanceService.punchCheck(Constants.CODE_VAL_ATWORK);
-		model.addAttribute("error", error);
-		// 勤怠登録
-		if (error == null) {
-			String message = studentAttendanceService.setPunchIn();
-			model.addAttribute("message", message);
-		}
-		// 一覧の再取得
-		List<AttendanceManagementDto> attendanceManagementDtoList = studentAttendanceService
-				.getAttendanceManagement(loginUserDto.getCourseId(), loginUserDto.getLmsUserId());
-		
-		// ★No.25: POST では警告チェックしない
-		
-		model.addAttribute("attendanceManagementDtoList", attendanceManagementDtoList);
+    /**
+     * 『出勤』ボタン押下
+     */
+    @RequestMapping(path = "/detail", params = "punchIn", method = RequestMethod.POST)
+    public String punchIn(Model model) {
 
-		return "attendance/detail";
-	}
+        String error = studentAttendanceService.punchCheck(Constants.CODE_VAL_ATWORK);
+        model.addAttribute("error", error);
 
-	/**
-	 * 勤怠管理画面 『退勤』ボタン押下
-	 * 
-	 * @param model
-	 * @return 勤怠管理画面
-	 */
-	@RequestMapping(path = "/detail", params = "punchOut", method = RequestMethod.POST)
-	public String punchOut(Model model) {
+        if (error == null) {
+            String message = studentAttendanceService.setPunchIn();
+            model.addAttribute("message", message);
+        }
 
-		// 更新前のチェック
-		String error = studentAttendanceService.punchCheck(Constants.CODE_VAL_LEAVING);
-		model.addAttribute("error", error);
-		// 勤怠登録
-		if (error == null) {
-			String message = studentAttendanceService.setPunchOut();
-			model.addAttribute("message", message);
-		}
-		// 一覧の再取得
-		List<AttendanceManagementDto> attendanceManagementDtoList = studentAttendanceService
-				.getAttendanceManagement(loginUserDto.getCourseId(), loginUserDto.getLmsUserId());
-		
-		// ★No.25: POST では警告チェックしない
-		
-		model.addAttribute("attendanceManagementDtoList", attendanceManagementDtoList);
+        model.addAttribute("attendanceManagementDtoList",
+                studentAttendanceService.getAttendanceManagement(
+                        loginUserDto.getCourseId(),
+                        loginUserDto.getLmsUserId()));
 
-		return "attendance/detail";
-	}
+        return "attendance/detail";
+    }
 
-	/**
-	 * 勤怠管理画面 『勤怠情報を直接編集する』リンク押下
-	 * 
-	 * @param model
-	 * @return 勤怠情報直接変更画面
-	 */
-	@RequestMapping(path = "/update")
-	public String update(Model model) {
+    /**
+     * 『退勤』ボタン押下
+     */
+    @RequestMapping(path = "/detail", params = "punchOut", method = RequestMethod.POST)
+    public String punchOut(Model model) {
 
-		// 勤怠管理リストの取得
-		List<AttendanceManagementDto> attendanceManagementDtoList = studentAttendanceService
-				.getAttendanceManagement(loginUserDto.getCourseId(), loginUserDto.getLmsUserId());
-		// 勤怠フォームの生成
-		AttendanceForm attendanceForm = studentAttendanceService
-				.setAttendanceForm(attendanceManagementDtoList);
-		model.addAttribute("attendanceForm", attendanceForm);
+        String error = studentAttendanceService.punchCheck(Constants.CODE_VAL_LEAVING);
+        model.addAttribute("error", error);
 
-		return "attendance/update";
-	}
+        if (error == null) {
+            String message = studentAttendanceService.setPunchOut();
+            model.addAttribute("message", message);
+        }
 
-	/**
-	 * 勤怠情報直接変更画面 『更新』ボタン押下
-	 * 
-	 * @param attendanceForm
-	 * @param model
-	 * @param result
-	 * @return 勤怠管理画面
-	 * @throws ParseException
-	 */
-	@RequestMapping(path = "/update", params = "complete", method = RequestMethod.POST)
-	public String complete(AttendanceForm attendanceForm, Model model, BindingResult result)
-			throws ParseException {
+        model.addAttribute("attendanceManagementDtoList",
+                studentAttendanceService.getAttendanceManagement(
+                        loginUserDto.getCourseId(),
+                        loginUserDto.getLmsUserId()));
 
-		// 更新
-		String message = studentAttendanceService.update(attendanceForm);
-		model.addAttribute("message", message);
-		// 一覧の再取得
-		List<AttendanceManagementDto> attendanceManagementDtoList = studentAttendanceService
-				.getAttendanceManagement(loginUserDto.getCourseId(), loginUserDto.getLmsUserId());
-		
-		// ★No.25: POST では警告チェックしない
-		
-		model.addAttribute("attendanceManagementDtoList", attendanceManagementDtoList);
+        return "attendance/detail";
+    }
 
-		return "attendance/detail";
-	}
+    /**
+     * 『勤怠情報を直接編集する』リンク押下
+     */
+    @RequestMapping(path = "/update")
+    public String update(Model model) {
 
-	// ========== ★No.25: 追加メソッド ==========
-	
-	/**
-	 * No.25: 過去日の未入力チェック
-	 * 
-	 * @param list 勤怠管理リスト
-	 * @return 過去日に未入力があればtrue
-	 */
-	private boolean hasPastUninput(List<AttendanceManagementDto> list) {
+        List<AttendanceManagementDto> list =
+                studentAttendanceService.getAttendanceManagement(
+                        loginUserDto.getCourseId(),
+                        loginUserDto.getLmsUserId());
 
-		LocalDate today = LocalDate.now();
-		LocalTime now = LocalTime.now();
-		LocalTime endLimit = LocalTime.of(18, 0); // 退勤を判定する基準時刻
+        AttendanceForm attendanceForm =
+                studentAttendanceService.setAttendanceForm(list);
 
-		for (AttendanceManagementDto dto : list) {
+        model.addAttribute("attendanceForm", attendanceForm);
+        return "attendance/update";
+    }
 
-			// Date → LocalDate に変換
-			LocalDate date = dto.getTrainingDate().toInstant()
-					.atZone(ZoneId.systemDefault())
-					.toLocalDate();
+    /**
+     * 勤怠情報直接変更画面 『更新』ボタン押下
+     * 
+     * @param attendanceForm
+     * @param model
+     * @param result
+     * @return 勤怠管理画面
+     * @throws ParseException
+     */
+    @RequestMapping(path = "/update", params = "complete", method = RequestMethod.POST)
+    public String complete(AttendanceForm attendanceForm, Model model, BindingResult result)
+            throws ParseException {
 
-			String start = dto.getTrainingStartTime();
-			String end   = dto.getTrainingEndTime();
+        // 勤怠情報更新（ParseException対応）
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        for (var dailyForm : attendanceForm.getAttendanceList()) {
+            if (dailyForm.getTrainingDate() != null) {
+                // 日付文字列をパースしてDate型に変換（SimpleDateFormat使用）
+                sdf.parse(dailyForm.getTrainingDate());
+            }
+        }
 
-			// ------------------------
-			// ✔ 今日より過去の日付
-			// ------------------------
-			if (date.isBefore(today)) {
-				if (isEmpty(start) || isEmpty(end)) {
-					return true;
-				}
-				continue;
-			}
+        String message = studentAttendanceService.update(attendanceForm);
+        model.addAttribute("message", message);
 
-			// ------------------------
-			// ✔ 今日（isToday = true のレコードのみ）
-			// ------------------------
-			if (Boolean.TRUE.equals(dto.getIsToday())) {
+        // 更新後の勤怠一覧再取得
+        List<AttendanceManagementDto> attendanceManagementDtoList =
+                studentAttendanceService.getAttendanceManagement(
+                        loginUserDto.getCourseId(),
+                        loginUserDto.getLmsUserId());
+        model.addAttribute("attendanceManagementDtoList", attendanceManagementDtoList);
 
-				// 出勤が未入力なら警告
-				if (isEmpty(start)) {
-					return true;
-				}
+        return "attendance/detail";
+    }
 
-				// 退勤が未入力の場合（終業時刻を過ぎていたら警告）
-				if (now.isAfter(endLimit) && isEmpty(end)) {
-					return true;
-				}
-			}
-		}
+    /**
+     * 過去日の未入力チェック
+     */
+    private boolean hasPastUninput(List<AttendanceManagementDto> list) {
 
-		return false;
-	}
+        LocalDate today = LocalDate.now();
+        LocalTime now = LocalTime.now();
+        LocalTime endLimit = LocalTime.of(18, 0);
 
-	/**
-	 * 文字列が空かどうかチェック
-	 * 
-	 * @param str チェック対象文字列
-	 * @return 空の場合true
-	 */
-	private boolean isEmpty(String str) {
-		return str == null || str.trim().isEmpty();
-	}
+        for (AttendanceManagementDto dto : list) {
 
+            LocalDate date = dto.getTrainingDate()
+                    .toInstant()
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDate();
+
+            if (isAbsent(dto)) {
+                continue;
+            }
+
+            String start = dto.getTrainingStartTime();
+            String end   = dto.getTrainingEndTime();
+
+            if (date.isBefore(today)) {
+                if (isEmpty(start) || isEmpty(end)) {
+                    return true;
+                }
+                continue;
+            }
+
+            if (Boolean.TRUE.equals(dto.getIsToday())) {
+                if (isEmpty(start)) {
+                    return true;
+                }
+                if (now.isAfter(endLimit) && isEmpty(end)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * 欠席判定
+     */
+    private boolean isAbsent(AttendanceManagementDto dto) {
+        return "欠席".equals(dto.getStatusDispName());
+    }
+
+    /**
+     * 空文字判定
+     */
+    private boolean isEmpty(String str) {
+        return str == null || str.trim().isEmpty();
+    }
 }
