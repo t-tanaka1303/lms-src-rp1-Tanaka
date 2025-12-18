@@ -47,4 +47,21 @@ public class DailyAttendanceForm {
 	/** インデックス */
 	private String index;
 
+	// ==================================================
+	// task26:出勤・退勤時間を「時・分」に分けて扱うための項目
+	// DBには登録せず、画面⇔Service間の受け渡し専用
+	// ==================================================
+
+	/** 出勤時間（時） */
+	private Integer trainingStartHour;
+
+	/** 出勤時間（分） */
+	private Integer trainingStartMinute;
+
+	/** 退勤時間（時） */
+	private Integer trainingEndHour;
+
+	/** 退勤時間（分） */
+	private Integer trainingEndMinute;
+
 }

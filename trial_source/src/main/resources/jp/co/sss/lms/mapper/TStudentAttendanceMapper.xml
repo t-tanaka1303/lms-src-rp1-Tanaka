@@ -5,6 +5,18 @@
 
 <mapper namespace="jp.co.sss.lms.mapper.TStudentAttendanceMapper">
 
+    <!-- =========================
+         PKで1件取得（★追加）
+         ========================= -->
+    <select id="findById"
+            resultType="jp.co.sss.lms.entity.TStudentAttendance">
+        SELECT *
+        FROM t_student_attendance
+        WHERE student_attendance_id = #{studentAttendanceId}
+          AND delete_flg = 0
+    </select>
+
+    <!-- LMSユーザーIDで取得 -->
     <select id="findByLmsUserId"
             resultType="jp.co.sss.lms.entity.TStudentAttendance">
         SELECT *
@@ -14,6 +26,7 @@
         ORDER BY training_date ASC
     </select>
 
+    <!-- LMSユーザーID＋日付 -->
     <select id="findByLmsUserIdAndTrainingDate"
             resultType="jp.co.sss.lms.entity.TStudentAttendance">
         SELECT *
@@ -23,6 +36,7 @@
           AND delete_flg = #{deleteFlg}
     </select>
 
+    <!-- 勤怠管理画面用 -->
     <select id="getAttendanceManagement"
             resultType="jp.co.sss.lms.dto.AttendanceManagementDto">
         SELECT
@@ -58,7 +72,7 @@
             lms_user_id = #{lmsUserId}
           AND delete_flg = #{deleteFlg}
           AND CAST(training_date AS DATE) < CAST(#{trainingDate} AS DATE)
-          AND status != 1
+          AND status IS NOT NULL
           AND (
                 training_start_time = ''
              OR training_end_time   = ''
@@ -68,6 +82,7 @@
         ]]>
     </select>
 
+    <!-- 登録 -->
     <insert id="insert"
             parameterType="jp.co.sss.lms.entity.TStudentAttendance"
             useGeneratedKeys="true"
@@ -103,6 +118,7 @@
         )
     </insert>
 
+    <!-- 更新 -->
     <update id="update"
             parameterType="jp.co.sss.lms.entity.TStudentAttendance">
         UPDATE t_student_attendance
@@ -111,9 +127,9 @@
             training_end_time   = #{trainingEndTime},
             status              = #{status},
             note                = #{note},
+            blank_time          = #{blankTime},
             last_modified_user  = #{lastModifiedUser},
-            last_modified_date  = #{lastModifiedDate},
-            blank_time          = #{blankTime}
+            last_modified_date  = #{lastModifiedDate}
         WHERE student_attendance_id = #{studentAttendanceId}
     </update>
 

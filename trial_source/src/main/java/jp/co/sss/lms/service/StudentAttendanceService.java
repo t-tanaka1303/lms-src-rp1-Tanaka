@@ -1,7 +1,8 @@
 package jp.co.sss.lms.service;
 
 import java.text.ParseException;
-import java.util.ArrayList;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.Date;
 import java.util.List;
 
@@ -39,6 +40,9 @@ public class StudentAttendanceService {
     @Autowired
     private TStudentAttendanceMapper tStudentAttendanceMapper;
 
+    /**
+     * 勤怠管理画面用DTO取得
+     */
     public List<AttendanceManagementDto> getAttendanceManagement(
             Integer courseId, Integer lmsUserId) {
 
@@ -47,11 +51,15 @@ public class StudentAttendanceService {
                         courseId, lmsUserId, Constants.DB_FLG_FALSE);
 
         for (AttendanceManagementDto dto : list) {
+
+            // 中抜け時間表示
             if (dto.getBlankTime() != null) {
-                TrainingTime blankTime =
+                TrainingTime blank =
                         attendanceUtil.calcBlankTime(dto.getBlankTime());
-                dto.setBlankTimeValue(String.valueOf(blankTime));
+                dto.setBlankTimeValue(blank.toString());
             }
+
+            // ステータス表示名
             AttendanceStatusEnum statusEnum =
                     AttendanceStatusEnum.getEnum(dto.getStatus());
             if (statusEnum != null) {
@@ -61,15 +69,55 @@ public class StudentAttendanceService {
         return list;
     }
 
-    // タスク25：過去日勤怠未入力件数取得
-    public int countPastUninputAttendance(Integer lmsUserId, Date trainingDate) {
-        return tStudentAttendanceMapper.countPastUninputAttendance(
-                lmsUserId,
-                Constants.DB_FLG_FALSE,
-                trainingDate
-        );
+    /**
+     * Task25：過去日勤怠未入力件数取得
+     */
+    public int countPastUninputAttendance(
+            Integer lmsUserId, Date trainingDate) {
+
+        List<AttendanceManagementDto> list =
+                tStudentAttendanceMapper.getAttendanceManagement(
+                        loginUserDto.getCourseId(),
+                        lmsUserId,
+                        Constants.DB_FLG_FALSE);
+
+        int count = 0;
+
+        LocalDate today = trainingDate.toInstant()
+                .atZone(ZoneId.systemDefault())
+                .toLocalDate();
+
+        for (AttendanceManagementDto dto : list) {
+
+            LocalDate date = dto.getTrainingDate().toInstant()
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDate();
+
+            // 過去日のみ
+            if (!date.isBefore(today)) {
+                continue;
+            }
+
+            // 欠席は除外
+            if (dto.getNote() != null && dto.getNote().contains("欠席")) {
+                continue;
+            }
+
+            if (isEmpty(dto.getTrainingStartTime())
+                    || isEmpty(dto.getTrainingEndTime())) {
+                count++;
+            }
+        }
+        return count;
     }
 
+    private boolean isEmpty(String str) {
+        return str == null || str.trim().isEmpty();
+    }
+
+    /**
+     * 打刻前チェック
+     */
     public String punchCheck(Short attendanceType) {
 
         Date trainingDate = attendanceUtil.getTrainingDate();
@@ -77,6 +125,7 @@ public class StudentAttendanceService {
         if (!loginUserUtil.isStudent()) {
             return messageUtil.getMessage(Constants.VALID_KEY_AUTHORIZATION);
         }
+
         if (!attendanceUtil.isWorkDay(
                 loginUserDto.getCourseId(), trainingDate)) {
             return messageUtil.getMessage(
@@ -92,7 +141,7 @@ public class StudentAttendanceService {
         switch (attendanceType) {
         case Constants.CODE_VAL_ATWORK:
             if (entity != null
-                    && !"".equals(entity.getTrainingStartTime())) {
+                    && !isEmpty(entity.getTrainingStartTime())) {
                 return messageUtil.getMessage(
                         Constants.VALID_KEY_ATTENDANCE_PUNCHALREADYEXISTS);
             }
@@ -100,14 +149,15 @@ public class StudentAttendanceService {
 
         case Constants.CODE_VAL_LEAVING:
             if (entity == null
-                    || "".equals(entity.getTrainingStartTime())) {
+                    || isEmpty(entity.getTrainingStartTime())) {
                 return messageUtil.getMessage(
                         Constants.VALID_KEY_ATTENDANCE_PUNCHINEMPTY);
             }
-            if (!"".equals(entity.getTrainingEndTime())) {
+            if (!isEmpty(entity.getTrainingEndTime())) {
                 return messageUtil.getMessage(
                         Constants.VALID_KEY_ATTENDANCE_PUNCHALREADYEXISTS);
             }
+
             TrainingTime start =
                     new TrainingTime(entity.getTrainingStartTime());
             TrainingTime end = new TrainingTime();
@@ -120,10 +170,14 @@ public class StudentAttendanceService {
         return null;
     }
 
+    /**
+     * 出勤打刻
+     */
     public String setPunchIn() {
 
         Date now = new Date();
         Date trainingDate = attendanceUtil.getTrainingDate();
+
         TrainingTime startTime = new TrainingTime();
         AttendanceStatusEnum status =
                 attendanceUtil.getStatus(startTime, null);
@@ -142,13 +196,13 @@ public class StudentAttendanceService {
             entity.setTrainingEndTime("");
             entity.setStatus(status.code);
             entity.setNote("");
+            entity.setBlankTime(null);
             entity.setAccountId(loginUserDto.getAccountId());
             entity.setDeleteFlg(Constants.DB_FLG_FALSE);
             entity.setFirstCreateUser(loginUserDto.getLmsUserId());
             entity.setFirstCreateDate(now);
             entity.setLastModifiedUser(loginUserDto.getLmsUserId());
             entity.setLastModifiedDate(now);
-            entity.setBlankTime(null);
             tStudentAttendanceMapper.insert(entity);
         } else {
             entity.setTrainingStartTime(startTime.toString());
@@ -162,6 +216,9 @@ public class StudentAttendanceService {
                 Constants.PROP_KEY_ATTENDANCE_UPDATE_NOTICE);
     }
 
+    /**
+     * 退勤打刻
+     */
     public String setPunchOut() {
 
         Date now = new Date();
@@ -176,6 +233,7 @@ public class StudentAttendanceService {
         TrainingTime start =
                 new TrainingTime(entity.getTrainingStartTime());
         TrainingTime end = new TrainingTime();
+
         AttendanceStatusEnum status =
                 attendanceUtil.getStatus(start, end);
 
@@ -189,11 +247,13 @@ public class StudentAttendanceService {
                 Constants.PROP_KEY_ATTENDANCE_UPDATE_NOTICE);
     }
 
+    /**
+     * 勤怠FORM生成
+     */
     public AttendanceForm setAttendanceForm(
             List<AttendanceManagementDto> list) {
 
         AttendanceForm form = new AttendanceForm();
-        form.setAttendanceList(new ArrayList<>());
         form.setLmsUserId(loginUserDto.getLmsUserId());
         form.setUserName(loginUserDto.getUserName());
         form.setLeaveFlg(loginUserDto.getLeaveFlg());
@@ -212,6 +272,9 @@ public class StudentAttendanceService {
         return form;
     }
 
+    /**
+     * 勤怠更新
+     */
     public String update(AttendanceForm attendanceForm)
             throws ParseException {
 
@@ -219,31 +282,35 @@ public class StudentAttendanceService {
                 ? loginUserDto.getLmsUserId()
                 : attendanceForm.getLmsUserId();
 
-        List<TStudentAttendance> entityList =
-                tStudentAttendanceMapper.findByLmsUserId(
-                        lmsUserId, Constants.DB_FLG_FALSE);
-
         Date now = new Date();
 
-        for (DailyAttendanceForm daily : attendanceForm.getAttendanceList()) {
+        for (DailyAttendanceForm daily
+                : attendanceForm.getAttendanceList()) {
 
-            TStudentAttendance entity = new TStudentAttendance();
-            BeanUtils.copyProperties(daily, entity);
+            TStudentAttendance entity;
+
+            if (daily.getStudentAttendanceId() != null) {
+                entity = tStudentAttendanceMapper.findById(
+                        daily.getStudentAttendanceId());
+            } else {
+                entity = new TStudentAttendance();
+                entity.setLmsUserId(lmsUserId);
+                entity.setDeleteFlg(Constants.DB_FLG_FALSE);
+                entity.setFirstCreateUser(loginUserDto.getLmsUserId());
+                entity.setFirstCreateDate(now);
+            }
+
             entity.setTrainingDate(
                     dateUtil.parse(daily.getTrainingDate()));
-            entity.setLmsUserId(lmsUserId);
+            entity.setTrainingStartTime(daily.getTrainingStartTime());
+            entity.setTrainingEndTime(daily.getTrainingEndTime());
+            entity.setBlankTime(daily.getBlankTime());
+            entity.setNote(daily.getNote());
             entity.setAccountId(loginUserDto.getAccountId());
             entity.setLastModifiedUser(loginUserDto.getLmsUserId());
             entity.setLastModifiedDate(now);
-            entity.setDeleteFlg(Constants.DB_FLG_FALSE);
 
-            entityList.add(entity);
-        }
-
-        for (TStudentAttendance entity : entityList) {
             if (entity.getStudentAttendanceId() == null) {
-                entity.setFirstCreateUser(loginUserDto.getLmsUserId());
-                entity.setFirstCreateDate(now);
                 tStudentAttendanceMapper.insert(entity);
             } else {
                 tStudentAttendanceMapper.update(entity);

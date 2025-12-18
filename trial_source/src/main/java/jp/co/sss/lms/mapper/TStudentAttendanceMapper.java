@@ -57,4 +57,9 @@ public interface TStudentAttendanceMapper {
      */
     Boolean update(TStudentAttendance tStudentAttendance);
 
+    /**
+     * 勤怠情報（受講生入力）取得（主キー）
+     */
+    TStudentAttendance findById(
+            @Param("studentAttendanceId") Integer studentAttendanceId);
 }

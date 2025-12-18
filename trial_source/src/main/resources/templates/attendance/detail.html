@@ -1,130 +1,103 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
-	th:replace="~{/common/layout :: layout(~{::title},~{::body/content()})}">
+      th:replace="~{/common/layout :: layout(~{::title},~{::body/content()})}">
 <head>
 <meta charset="UTF-8">
 <title>勤怠情報変更｜LMS</title>
-<link th:href="@{/css/bootstrap.min.css}" rel="stylesheet">
-<script th:src="@{/js/jquery.min.js}"></script>
-<script th:src="@{/js/bootstrap.min.js}"></script>
 </head>
 <body>
 
-	<!-- 完了メッセージ -->
-	<th:block th:if="${not #strings.isEmpty(message)}" id="message">
-		<div class="alert alert-info alert-dismissible fade in" role="alert">
-			<button type="button" class="close" data-dismiss="alert" aria-label="Close">
-				<span aria-hidden="true">×</span>
-			</button>
-			<span>[[${message}]]</span>
-		</div>
-	</th:block>
+<!-- 完了メッセージ -->
+<th:block th:if="${not #strings.isEmpty(message)}">
+    <div class="alert alert-info alert-dismissible fade in" role="alert">
+        <button type="button" class="close" data-dismiss="alert">
+            <span>×</span>
+        </button>
+        <span>[[${message}]]</span>
+    </div>
+</th:block>
 
-	<!-- No.25: 警告メッセージ（過去日未入力） -->
-	<th:block th:if="${warning}" id="warning">
-		<div class="alert alert-warning alert-dismissible fade in" role="alert">
-			<button type="button" class="close" data-dismiss="alert" aria-label="Close">
-				<span aria-hidden="true">×</span>
-			</button>
-			<span>過去日の勤怠に未入力があります。</span>
-		</div>
-	</th:block>
+<!-- エラーメッセージ -->
+<th:block th:if="${not #strings.isEmpty(error)}">
+    <ul style="padding-left: 0; list-style: none;">
+        <li>
+            <span th:text="'* ' + ${error}" class="help-inline error"></span>
+        </li>
+    </ul>
+</th:block>
 
-	<h2>勤怠管理</h2>
+<h2>勤怠管理</h2>
 
-	<!-- エラーメッセージ -->
-	<th:block th:if="${not #strings.isEmpty(error)}" id="error">
-		<ul style="padding-left: 0; list-style: none;">
-			<li><span th:text="'*' + '&nbsp' + ${error}" class="help-inline error"></span></li>
-		</ul>
-	</th:block>
+<th:block th:if="${session.loginUserDto.role == '0001'}">
+    <div class="well well-lg p10 mb10">
+        <div class="form-group">
+            <small id="now"></small>
+        </div>
+        <div class="form-group">
+            <form th:action="@{/attendance/detail}" method="post" class="form-inline">
+                <input type="submit" value="出勤" name="punchIn" class="btn btn-default" />
+                <input type="submit" value="退勤" name="punchOut" class="btn btn-default" />
+            </form>
+        </div>
+        <p><a th:href="@{/attendance/update}">勤怠情報を直接編集する</a></p>
+    </div>
+</th:block>
 
-	<th:block th:if="${session.loginUserDto.role == '0001'}">
-		<div class="well well-lg p10 mb10">
-			<div class="form-group">
-				<small id="now"></small>
-			</div>
-			<div class="form-group">
-				<form th:action="@{/attendance/detail}" method="post" class="form-inline">
-					<input type="submit" value="出勤" name="punchIn" class="btn btn-default" />
-					<input type="submit" value="退勤" name="punchOut" class="btn btn-default" />
-				</form>
-			</div>
-			<p><a th:href="@{/attendance/update}">勤怠情報を直接編集する</a></p>
-		</div>
-	</th:block>
+<div class="row">
+    <div class="bs-component col-sm-12">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>日付</th>
+                    <th>コース内容</th>
+                    <th>出勤</th>
+                    <th>退勤</th>
+                    <th>中抜け時間</th>
+                    <th>ステータス</th>
+                    <th>備考</th>
+                </tr>
+            </thead>
+            <tbody>
+                <th:block th:each="dto : ${attendanceManagementDtoList}" th:object="${dto}">
+                    <tr>
+                        <td>[[*{#dates.format(trainingDate,'yyyy年M月d日(E)')}]]</td>
+                        <td>[[*{sectionName}]]</td>
+                        <td>[[*{trainingStartTime}]]</td>
+                        <td>[[*{trainingEndTime}]]</td>
+                        <td>[[*{blankTimeValue}]]</td>
+                        <td>[[*{statusDispName}]]</td>
+                        <td>[[*{note}]]</td>
+                    </tr>
+                </th:block>
+            </tbody>
+        </table>
+    </div>
+</div>
 
-	<div class="row">
-		<div class="bs-component col-sm-12">
-			<table class="table table-hover dataTable no-footer">
-				<thead class="db">
-					<tr>
-						<th class="w160">日付</th>
-						<th class="w260">コース内容</th>
-						<th class="w80">出勤</th>
-						<th class="w80">退勤</th>
-						<th class="w120">中抜け時間</th>
-						<th class="w120">ステータス</th>
-						<th class="w200">備考</th>
-					</tr>
-				</thead>
+<!-- Task25：過去日未入力ダイアログ -->
+<script th:inline="javascript">
+/*<![CDATA[*/
+    document.addEventListener('DOMContentLoaded', function () {
+        try {
+            var hasWarning = /*[[${warning}]]*/ false;
+            if (hasWarning) {
+                alert('過去日の勤怠に未入力があります。');
+            }
+        } catch(e) {
+            console.error('警告ダイアログ処理でエラー:', e);
+        }
 
-				<tbody class="db">
-					<th:block th:each="attendanceManagementDto : ${attendanceManagementDtoList}" th:object="${attendanceManagementDto}">
-						<tr>
-							<td class="w160">[[*{#dates.format(trainingDate, 'yyyy年M月d日(E)')}]]</td>
-							<td class="w260">[[*{sectionName}]]</td>
-							<td class="w80">[[*{trainingStartTime}]]</td>
-							<td class="w80">[[*{trainingEndTime}]]</td>
-							<td class="w120">[[*{blankTimeValue}]]</td>
-							<td class="w120">[[*{statusDispName}]]</td>
-							<td class="w200">[[*{note}]]</td>
-						</tr>
-					</th:block>
-				</tbody>
-			</table>
-		</div>
-	</div>
-
-	<!-- ★No.25: 過去日未入力ダイアログ表示 -->
-	<script type="text/javascript" th:inline="javascript">
-		$(function() {
-			// 現在時刻表示
-			$("#now").text('現在の時刻は　' + getClock() + '　です。');
-			setInterval(function() {
-				$("#now").text('現在の時刻は　' + getClock() + '　です。');
-			}, 1000);
-
-			// 過去日未入力チェック
-			var hasWarning = /*[[${warning}]]*/ false;
-			if(hasWarning) {
-				var modalHtml = 
-				'<div class="modal fade" id="pastUninputModal" tabindex="-1" role="dialog" aria-labelledby="modalLabel">' +
-					'<div class="modal-dialog" role="document">' +
-						'<div class="modal-content">' +
-							'<div class="modal-header">' +
-								'<h4 class="modal-title" id="modalLabel">過去日の勤怠未入力確認</h4>' +
-							'</div>' +
-							'<div class="modal-body">過去日の勤怠に未入力があります。確認してください。</div>' +
-							'<div class="modal-footer">' +
-								'<button type="button" class="btn btn-primary" data-dismiss="modal">OK</button>' +
-							'</div>' +
-						'</div>' +
-					'</div>' +
-				'</div>';
-
-				$('body').append(modalHtml);
-				$('#pastUninputModal').modal('show');
-			}
-		});
-
-		function getClock() {
-			const today =  new Date();
-			const hours = ('0' + today.getHours()).slice(-2);
-			const minutes = ('0' + today.getMinutes()).slice(-2);
-			return hours + ':' + minutes;
-		}
-	</script>
+        // 現在時刻表示
+        var nowElem = document.getElementById('now');
+        if (nowElem) {
+            var d = new Date();
+            nowElem.innerText = '現在の時刻は ' +
+                ('0' + d.getHours()).slice(-2) + ':' +
+                ('0' + d.getMinutes()).slice(-2) + ' です。';
+        }
+    });
+/*]]>*/
+</script>
 
 </body>
 </html>
