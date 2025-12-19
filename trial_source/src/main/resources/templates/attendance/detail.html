@@ -75,28 +75,13 @@
 </div>
 
 <!-- Task25：過去日未入力ダイアログ -->
-<script th:inline="javascript">
-/*<![CDATA[*/
-    document.addEventListener('DOMContentLoaded', function () {
-        try {
-            var hasWarning = /*[[${warning}]]*/ false;
-            if (hasWarning) {
-                alert('過去日の勤怠に未入力があります。');
-            }
-        } catch(e) {
-            console.error('警告ダイアログ処理でエラー:', e);
-        }
-
-        // 現在時刻表示
-        var nowElem = document.getElementById('now');
-        if (nowElem) {
-            var d = new Date();
-            nowElem.innerText = '現在の時刻は ' +
-                ('0' + d.getHours()).slice(-2) + ':' +
-                ('0' + d.getMinutes()).slice(-2) + ' です。';
-        }
-    });
-/*]]>*/
+<script type="text/javascript" th:inline="javascript">
+	$(function dayalert(){
+	var day = /*[[${hasNotEnterCount}]]*/"day";
+	if (day){alert ("過去日の勤怠に未入力があります。");
+	
+	}
+	});
 </script>
 
 </body>
