@@ -62,25 +62,25 @@
     </select>
 
     <!-- タスク25 -->
-    <select id="countPastUninputAttendance" resultType="int">
-        <![CDATA[
-        SELECT
-            COUNT(*)
-        FROM
-            t_student_attendance
-        WHERE
-            lms_user_id = #{lmsUserId}
-          AND delete_flg = #{deleteFlg}
-          AND CAST(training_date AS DATE) < CAST(#{trainingDate} AS DATE)
-          AND status IS NOT NULL
-          AND (
-                training_start_time = ''
-             OR training_end_time   = ''
-             OR training_start_time IS NULL
-             OR training_end_time   IS NULL
-          )
-        ]]>
-    </select>
+ <select id="countPastUninputAttendance" resultType="int">
+<![CDATA[
+    SELECT
+        COUNT(*)
+    FROM
+        t_student_attendance
+    WHERE
+        lms_user_id = #{lmsUserId}
+      AND delete_flg = #{deleteFlg}
+      AND CAST(training_date AS DATE) < CAST(#{trainingDate} AS DATE)
+      AND status != 1
+      AND (
+            training_start_time IS NULL
+         OR training_end_time   IS NULL
+         OR training_start_time = ''
+         OR training_end_time   = ''
+      )
+]]>
+</select>
 
     <!-- 登録 -->
     <insert id="insert"
