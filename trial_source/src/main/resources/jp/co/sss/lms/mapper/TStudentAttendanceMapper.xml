@@ -61,7 +61,7 @@
         ORDER BY t2.date ASC
     </select>
 
-    <!-- タスク25 -->
+    <!-- タスク25  田中智貴-->
 	<select id="notEnterCount" resultType="java.lang.Integer">
 		SELECT COUNT(*)
 		FROM t_student_attendance

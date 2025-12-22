@@ -67,7 +67,7 @@ public interface TStudentAttendanceMapper {
 
 	/**
 	 * task25
-	 * 勤怠情報未入力取得
+	 * @author 田中智貴
 	 * @param lmsUserId
 	 * @param trainingDate
 	 * @param deleteFlg

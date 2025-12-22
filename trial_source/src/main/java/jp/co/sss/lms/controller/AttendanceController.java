@@ -32,9 +32,8 @@ public class AttendanceController {
 
 	/**
 	 * 勤怠管理画面 初期表示
-	 * 
+	 * @author 田中智貴
 	 * @param lmsUserId
-	 * @param courseId
 	 * @param model
 	 * @return 勤怠管理画面
 	 * @throws ParseException
@@ -47,7 +46,7 @@ public class AttendanceController {
 		List<AttendanceManagementDto> attendanceManagementDtoList = studentAttendanceService
 				.getAttendanceManagement(loginUserDto.getCourseId(), loginUserDto.getLmsUserId());
 		model.addAttribute("attendanceManagementDtoList", attendanceManagementDtoList);
-		//task25
+		//task25 
 		//未入力件数を取得
 		model.addAttribute("hasNotEnterCount",  studentAttendanceService.getNotEnterCount(loginUserDto.getLmsUserId()));
 
