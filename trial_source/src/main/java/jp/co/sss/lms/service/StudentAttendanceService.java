@@ -368,25 +368,25 @@ public class StudentAttendanceService {
 	}
 
 	/**
-	 * ここから追加
+	 * tsk25
 	 * 勤怠情報未入力件数取得
 	 * @param lmsUserId
-	 * @param deleteFlg
 	 * @param trainingDate
+	 * @param deleteFlg
 	 * @return Integer
 	 */
 	//本日の日付の取得
 	public boolean getNotEnterCount(Integer lmsUserId) throws ParseException {
 
 
-			//今日の日付を"yyyy-MM-dd"形式に変換
+			//今日の日付を"yyyy/MM/dd"形式に変換
 			Date date = new Date();
 			SimpleDateFormat df = new SimpleDateFormat("yyyy/MM/dd");
 			Date trainingDate = df.parse(df.format( date));
-
+			//task25
 			// 勤怠情報の未入力件数を取得
-			Integer notEnterCount = tStudentAttendanceMapper.notEnterCount(lmsUserId, Constants.DB_FLG_FALSE,
-					trainingDate);
+			Integer notEnterCount = tStudentAttendanceMapper.notEnterCount(lmsUserId,trainingDate,
+					Constants.DB_FLG_FALSE);
 
 
 

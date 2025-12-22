@@ -39,6 +39,7 @@ public class AttendanceController {
 	 * @return 勤怠管理画面
 	 * @throws ParseException
 	 */
+	//日付変換処理で例外が発生する可能性があるためthrows ParseException
 	@RequestMapping(path = "/detail", method = RequestMethod.GET)
 	public String index(Model model) throws ParseException {
 
@@ -46,10 +47,8 @@ public class AttendanceController {
 		List<AttendanceManagementDto> attendanceManagementDtoList = studentAttendanceService
 				.getAttendanceManagement(loginUserDto.getCourseId(), loginUserDto.getLmsUserId());
 		model.addAttribute("attendanceManagementDtoList", attendanceManagementDtoList);
-
-		// ここ追加　未入力件数を取得
-
-
+		//task25
+		//未入力件数を取得
 		model.addAttribute("hasNotEnterCount",  studentAttendanceService.getNotEnterCount(loginUserDto.getLmsUserId()));
 
 		return "attendance/detail";
