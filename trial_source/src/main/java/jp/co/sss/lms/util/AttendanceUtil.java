@@ -136,7 +136,7 @@ public class AttendanceUtil {
 
 	/**
 	 *  task26追加 時間取得
-	 * 
+	 * @author 田中智貴
 	 * @return 時間
 	 */
 	public LinkedHashMap<Integer, String> setTrainingTimeHh() {
@@ -155,7 +155,7 @@ public class AttendanceUtil {
 
 	/**
 		 * task26 分取得
-		 * 
+		 * @author 田中智貴
 		 * @return 分
 		 */
 	public LinkedHashMap<Integer, String> setTrainingTimeMi() {
@@ -187,8 +187,8 @@ public class AttendanceUtil {
 	}
 
 	/**
-	 * task26追加 開始時刻(hh;mm)を時(hh)に分割
-	 * 
+	 * task26 開始時刻(hh;mm)を時(hh)に分割
+	 * @author 田中智貴
 	 * @return 時
 	 */
 
@@ -203,7 +203,7 @@ public class AttendanceUtil {
 
 	/**
 	 * task26 開始時刻(hh;mm)を分(mm)に分割
-	 * 
+	 * @author 田中智貴
 	 * @return 分
 	 */
 
